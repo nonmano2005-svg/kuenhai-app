@@ -1,20 +1,8 @@
-// ⚠️ IMPORTANT: Run `npm install firebase` in your terminal before using this file.
-
-import { initializeApp } from 'firebase/app';
-import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from 'firebase/auth';
-
 const firebaseConfig = {
-    apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
-    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
-    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
-    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
-    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
-    appId: import.meta.env.VITE_FIREBASE_APP_ID,
+    apiKey: "AIzaSyB8_m2GnTy-FtvAxz3qfpi0rKznFkKlagE",
+    authDomain: "kuenhai-app.firebaseapp.com",
+    projectId: "kuenhai-app",
+    storageBucket: "kuenhai-app.firebasestorage.app",
+    messagingSenderId: "998792659773",
+    appId: "1:998792659773:web:f05d0c54389d69ac13fb54"
 };
-
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const googleProvider = new GoogleAuthProvider();
-const facebookProvider = new FacebookAuthProvider();
-
-export { auth, googleProvider, facebookProvider };
