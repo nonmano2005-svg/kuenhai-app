@@ -1,5 +1,6 @@
 import { initializeApp } from "firebase/app";
 import { getAuth, GoogleAuthProvider, FacebookAuthProvider } from "firebase/auth";
+import { getFirestore } from "firebase/firestore"; // 👈 เพิ่มเครื่องมือฐานข้อมูล
 
 const firebaseConfig = {
     apiKey: "AIzaSyCBJqFykI6mUe2s2NBf3wRE6DSHB4tQg7c",
@@ -16,3 +17,6 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const googleProvider = new GoogleAuthProvider();
 export const facebookProvider = new FacebookAuthProvider();
+
+// 👇 ส่งออกระบบฐานข้อมูลให้หน้าอื่นเอาไปใช้ได้
+export const db = getFirestore(app);
