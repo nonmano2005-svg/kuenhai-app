@@ -136,7 +136,7 @@ export default function ReportLostPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">อัปโหลดรูปภาพ (ขนาดไม่เกิน 1MB)</label>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">อัปโหลดรูปภาพ (ขนาดไม่เกิน 5MB)</label>
                             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:bg-gray-50 transition relative">
                                 <div className="space-y-1 text-center">
                                     {imagePreview ? (
