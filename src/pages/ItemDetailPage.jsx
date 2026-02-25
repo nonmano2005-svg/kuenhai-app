@@ -1,7 +1,8 @@
 import { useParams, Link } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, MapPin, Calendar, Clock, Phone, MessageCircle, Send, User, Shield, Share2, PackageX, CheckCircle, Bot } from 'lucide-react';
-import items from '../data/mockItems';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 import VerificationBadgeCard from '../components/VerificationBadgeCard';
 
 const aiResponses = [
@@ -15,7 +16,8 @@ const aiResponses = [
 
 export default function ItemDetailPage() {
     const { id } = useParams();
-    const item = items.find((i) => i.id === parseInt(id));
+    const [item, setItem] = useState(null);
+    const [loading, setLoading] = useState(true);
     const [inputValue, setInputValue] = useState('');
     const [messages, setMessages] = useState([
         { id: 1, text: 'สวัสดีครับ ผมคือผู้ช่วย KUEN HAI มีอะไรให้ผมช่วยตามหาไหมครับ?', sender: 'ai', time: 'Now' },
@@ -23,6 +25,29 @@ export default function ItemDetailPage() {
     const [isTyping, setIsTyping] = useState(false);
     const chatEndRef = useRef(null);
     const idCounter = useRef(2);
+
+    // Fetch item from Firestore
+    useEffect(() => {
+        const fetchItem = async () => {
+            setLoading(true);
+            try {
+                const docRef = doc(db, 'lostItems', id);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    setItem({ id: docSnap.id, ...docSnap.data() });
+                } else {
+                    setItem(null);
+                }
+            } catch (error) {
+                console.error('Error fetching item:', error);
+                setItem(null);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchItem();
+    }, [id]);
 
     // Auto-scroll to bottom when messages change
     useEffect(() => {
@@ -61,6 +86,18 @@ export default function ItemDetailPage() {
             setIsTyping(false);
         }, delay);
     };
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen bg-gray-50 font-kanit flex items-center justify-center">
+                <div className="text-center">
+                    <div className="animate-spin rounded-full h-12 w-12 border-4 border-gray-200 border-t-navy mx-auto mb-4"></div>
+                    <p className="text-gray-500 text-sm">กำลังโหลดข้อมูล...</p>
+                </div>
+            </div>
+        );
+    }
 
     // Not found state
     if (!item) {
@@ -111,8 +148,8 @@ export default function ItemDetailPage() {
                         {/* Main Image */}
                         <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-100">
                             <img
-                                src={item.image.replace('400/300', '800/600')}
-                                alt={item.title}
+                                src={item.image ? item.image.replace('400/300', '800/600') : 'https://via.placeholder.com/800x600?text=No+Image'}
+                                alt={item.title || 'รายการ'}
                                 className="w-full h-72 sm:h-96 object-cover"
                             />
                         </div>
@@ -133,7 +170,7 @@ export default function ItemDetailPage() {
                                 />
                                 <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
                                 <div className="absolute bottom-3 left-3 text-white text-sm font-medium">
-                                    📍 {item.location}
+                                    📍 {item.location || 'ไม่ระบุสถานที่'}
                                 </div>
                             </div>
                         </div>
@@ -145,34 +182,34 @@ export default function ItemDetailPage() {
                         <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
                             <div className="flex items-start justify-between gap-3 mb-4">
                                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-                                    {item.title}
+                                    {item.title || 'ไม่ระบุชื่อ'}
                                 </h1>
-                                <span className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${item.status === 'พบของ' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
-                                    {item.status}
+                                <span className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${(item.status === 'พบของ') ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                                    {item.status || 'ยังไม่พบเจ้าของ'}
                                 </span>
                             </div>
 
                             <div className="flex flex-wrap gap-4 text-gray-500 text-sm mb-5">
                                 <div className="flex items-center gap-1.5">
                                     <Calendar className="w-4 h-4" />
-                                    {item.date}
+                                    {item.date || 'ไม่ระบุวันที่'}
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <Clock className="w-4 h-4" />
-                                    {item.time}
+                                    {item.time || 'ไม่ระบุเวลา'}
                                 </div>
                                 <div className="flex items-center gap-1.5">
                                     <MapPin className="w-4 h-4" />
-                                    {item.location}
+                                    {item.location || 'ไม่ระบุสถานที่'}
                                 </div>
                             </div>
 
                             <div className="inline-block text-xs font-medium px-3 py-1 rounded-full bg-blue-100 text-blue-700 mb-4">
-                                {item.tag}
+                                {item.tag || item.category || 'ทั่วไป'}
                             </div>
 
                             <p className="text-gray-600 text-sm leading-relaxed">
-                                {item.description}
+                                {item.description || 'ไม่มีรายละเอียดเพิ่มเติม'}
                             </p>
                         </div>
 
@@ -184,12 +221,12 @@ export default function ItemDetailPage() {
                             </h3>
                             <div className="flex items-center gap-4">
                                 <img
-                                    src={item.finderImage}
-                                    alt={item.finderName}
+                                    src={item.finderImage || 'https://ui-avatars.com/api/?name=User&background=0D1B2A&color=fff&size=100'}
+                                    alt={item.finderName || 'ผู้พบ'}
                                     className="w-14 h-14 rounded-full object-cover border-2 border-navy/20"
                                 />
                                 <div className="flex-1">
-                                    <p className="font-semibold text-gray-800">{item.finderName}</p>
+                                    <p className="font-semibold text-gray-800">{item.finderName || 'ผู้ใช้ไม่ระบุชื่อ'}</p>
                                     <p className="text-gray-400 text-xs mt-0.5">ผู้พบของ • ยืนยันตัวตนแล้ว ✓</p>
                                 </div>
                             </div>
