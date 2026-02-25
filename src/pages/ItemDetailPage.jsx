@@ -1,7 +1,7 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, MapPin, Calendar, Clock, Phone, MessageCircle, Send, User, Shield, Share2, PackageX, CheckCircle, Bot } from 'lucide-react';
-import { doc, getDoc } from 'firebase/firestore';
+import { ArrowLeft, MapPin, Calendar, Clock, Phone, MessageCircle, Send, User, Shield, Share2, PackageX, CheckCircle, Bot, Trash2 } from 'lucide-react';
+import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 import VerificationBadgeCard from '../components/VerificationBadgeCard';
 
@@ -16,6 +16,7 @@ const aiResponses = [
 
 export default function ItemDetailPage() {
     const { id } = useParams();
+    const navigate = useNavigate();
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [inputValue, setInputValue] = useState('');
@@ -242,6 +243,26 @@ export default function ItemDetailPage() {
                                     แจ้งเป็นเจ้าของ
                                 </button>
                             </div>
+
+                            {/* Delete Button */}
+                            <button
+                                onClick={async () => {
+                                    if (window.confirm('คุณแน่ใจหรือไม่ว่าต้องการลบประกาศนี้?')) {
+                                        try {
+                                            await deleteDoc(doc(db, 'lostItems', id));
+                                            alert('ลบประกาศเรียบร้อยแล้ว');
+                                            navigate('/');
+                                        } catch (error) {
+                                            console.error('Error deleting item:', error);
+                                            alert('เกิดข้อผิดพลาดในการลบ กรุณาลองใหม่');
+                                        }
+                                    }
+                                }}
+                                className="w-full bg-red-500 hover:bg-red-600 text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 mt-4 transition-colors shadow-md hover:shadow-lg"
+                            >
+                                <Trash2 className="w-4 h-4" />
+                                ลบประกาศนี้
+                            </button>
 
                             {/* Verification Status */}
                             <VerificationBadgeCard
