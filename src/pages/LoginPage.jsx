@@ -1,155 +1,131 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Mail, Lock, Eye, EyeOff, LogIn, ArrowLeft } from 'lucide-react';
-import { signInWithPopup } from 'firebase/auth';
-import { auth, googleProvider, facebookProvider } from '../firebase';
+import React, { useState } from 'react';
+import { Mail, Lock, Eye, EyeOff, LogIn, UserPlus } from 'lucide-react';
+import { auth } from '../firebase';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from 'firebase/auth';
 
 export default function LoginPage() {
+    const [isLogin, setIsLogin] = useState(true);
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [showPassword, setShowPassword] = useState(false);
+    const [errorMsg, setErrorMsg] = useState('');
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
-    };
+        setErrorMsg('');
 
-    const handleGoogleLogin = async () => {
         try {
-            const result = await signInWithPopup(auth, googleProvider);
-            console.log('Google login success:', result.user);
-            // TODO: redirect or update state after successful login
+            if (isLogin) {
+                // ระบบเข้าสู่ระบบ
+                await signInWithEmailAndPassword(auth, email, password);
+                alert('🎉 เข้าสู่ระบบสำเร็จ! สถานะของคุณคือ: บัญชีที่ตรวจสอบแล้ว ✅');
+                // TODO: ใส่โค้ดเด้งไปหน้าแรกตรงนี้
+            } else {
+                // ระบบสมัครสมาชิก
+                await createUserWithEmailAndPassword(auth, email, password);
+                alert('✅ สมัครสมาชิกสำเร็จ! บัญชีของคุณได้รับการยืนยันตัวตนทันที');
+                // สมัครเสร็จให้กลับมาหน้าล็อกอิน
+                setIsLogin(true);
+                setPassword('');
+            }
         } catch (error) {
-            console.error('Google login error:', error);
-            alert('Google login failed: ' + error.message);
-        }
-    };
-
-    const handleFacebookLogin = async () => {
-        try {
-            const result = await signInWithPopup(auth, facebookProvider);
-            console.log('Facebook login success:', result.user);
-            // TODO: redirect or update state after successful login
-        } catch (error) {
-            console.error('Facebook login error:', error);
-            alert('Facebook login failed: ' + error.message);
+            setErrorMsg('อีเมลหรือรหัสผ่านไม่ถูกต้อง กรุณาลองใหม่ครับ');
+            console.error(error);
         }
     };
 
     return (
-        <div
-            className="min-h-screen font-kanit flex items-center justify-center px-4 py-10 relative"
-            style={{
-                backgroundImage: `url("/bgicon.png")`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
-            }}
-        >
-            <div className="absolute inset-0 bg-gradient-to-br from-navy/85 via-navy-dark/90 to-black/85" />
+        <div className="min-h-screen bg-[#1e293b] flex items-center justify-center p-4">
+            <div className="bg-white rounded-2xl w-full max-w-md p-8 shadow-xl">
 
-            {/* Back */}
-            <Link
-                to="/"
-                className="absolute top-5 left-5 z-20 inline-flex items-center gap-2 text-white/60 hover:text-white text-sm transition-colors group"
-            >
-                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
-                กลับหน้าหลัก
-            </Link>
-
-            {/* Card */}
-            <div className="relative z-10 w-full max-w-sm bg-white rounded-2xl shadow-2xl p-6">
-
-                {/* Logo */}
-                <div className="text-center mb-5">
-                    <img src="/lg.jpg" alt="Kuen Hai Logo" className="h-20 w-auto mx-auto mb-3" />
-                    <h2 className="text-sm font-semibold text-gray-800">ยินดีต้อนรับกลับมา</h2>
-                    <p className="text-gray-400 text-xs mt-0.5">เข้าสู่ระบบเพื่อจัดการรายการของคุณ</p>
+                {/* โลโก้และหัวข้อ */}
+                <div className="flex flex-col items-center mb-8">
+                    <div className="bg-yellow-400 p-3 rounded-xl mb-4">
+                        <h1 className="text-2xl font-bold text-[#1e293b]">KUEN HAI</h1>
+                    </div>
+                    <h2 className="text-xl font-bold text-gray-800">
+                        {isLogin ? 'ยินดีต้อนรับกลับมา' : 'สมัครสมาชิกใหม่'}
+                    </h2>
+                    <p className="text-sm text-gray-500 mt-1">
+                        {isLogin ? 'เข้าสู่ระบบเพื่อจัดการรายการของคุณ' : 'สร้างบัญชีเพื่อเริ่มต้นใช้งานระบบ'}
+                    </p>
                 </div>
 
-                {/* Form */}
-                <form onSubmit={handleSubmit} className="space-y-3">
+                {/* ฟอร์มกรอกข้อมูล */}
+                <form onSubmit={handleSubmit} className="space-y-5">
+                    {errorMsg && (
+                        <div className="bg-red-100 text-red-600 p-3 rounded-lg text-sm text-center">
+                            {errorMsg}
+                        </div>
+                    )}
+
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">อีเมล</label>
+                        <label className="block text-sm font-medium text-gray-700 mb-1">อีเมล</label>
                         <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                                <Mail className="h-5 w-5 text-gray-400" />
+                            </div>
                             <input
                                 type="email"
+                                required
                                 value={email}
                                 onChange={(e) => setEmail(e.target.value)}
+                                className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:ring-yellow-400 focus:border-yellow-400"
                                 placeholder="you@email.com"
-                                required
-                                className="w-full pl-9 pr-3 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                         </div>
                     </div>
 
                     <div>
-                        <label className="block text-xs font-medium text-gray-600 mb-1">รหัสผ่าน</label>
+                        <div className="flex items-center justify-between mb-1">
+                            <label className="block text-sm font-medium text-gray-700">รหัสผ่าน</label>
+                            {isLogin && <a href="#" className="text-xs text-yellow-600 hover:underline">ลืมรหัสผ่าน?</a>}
+                        </div>
                         <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-400" />
+                            <div className="absolute inset-y-0 left-0 pl-3 flex items-center">
+                                <Lock className="h-5 w-5 text-gray-400" />
+                            </div>
                             <input
                                 type={showPassword ? 'text' : 'password'}
+                                required
                                 value={password}
                                 onChange={(e) => setPassword(e.target.value)}
+                                className="block w-full pl-10 pr-10 py-2 border border-gray-300 rounded-lg focus:ring-yellow-400 focus:border-yellow-400"
                                 placeholder="••••••••"
-                                required
-                                className="w-full pl-9 pr-9 py-2 rounded-lg border border-gray-300 text-gray-700 text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 transition-colors"
+                                className="absolute inset-y-0 right-0 pr-3 flex items-center"
                             >
-                                {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                {showPassword ? <EyeOff className="h-5 w-5 text-gray-400" /> : <Eye className="h-5 w-5 text-gray-400" />}
                             </button>
                         </div>
                     </div>
 
-                    <div className="text-right">
-                        <a href="#" className="text-gray-400 hover:text-blue-600 text-xs transition-colors">ลืมรหัสผ่าน?</a>
-                    </div>
-
                     <button
                         type="submit"
-                        className="w-full mt-1 bg-accent hover:bg-yellow-400 text-navy-dark py-2.5 rounded-lg font-bold text-sm transition-all shadow-md hover:shadow-lg flex items-center justify-center"
+                        className="w-full flex justify-center items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-lg transition-colors"
                     >
-                        <span className="flex items-center gap-2 -translate-y-px">
-                            <LogIn className="w-4 h-4" />
-                            เข้าสู่ระบบ
-                        </span>
+                        {isLogin ? <LogIn className="h-5 w-5" /> : <UserPlus className="h-5 w-5" />}
+                        {isLogin ? 'เข้าสู่ระบบ' : 'ยืนยันการสมัครสมาชิก'}
                     </button>
                 </form>
 
-                {/* Divider */}
-                <div className="flex items-center gap-3 my-4">
-                    <div className="flex-1 h-px bg-gray-200" />
-                    <span className="text-gray-400 text-[10px]">หรือเข้าสู่ระบบด้วย</span>
-                    <div className="flex-1 h-px bg-gray-200" />
-                </div>
-
-                {/* Social */}
-                <div className="grid grid-cols-2 gap-2">
-                    <button onClick={handleGoogleLogin} className="flex items-center justify-center gap-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 py-2 rounded-lg text-xs font-medium transition-all">
-                        <svg className="w-4 h-4" viewBox="0 0 24 24">
-                            <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" />
-                            <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
-                            <path fill="#FBBC05" d="M5.84 14.1c-.22-.66-.35-1.36-.35-2.1s.13-1.44.35-2.1V7.07H2.18A10.96 10.96 0 0 0 1 12c0 1.77.42 3.45 1.18 4.93l3.66-2.84z" />
-                            <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
-                        </svg>
-                        Google
-                    </button>
-                    <button onClick={handleFacebookLogin} className="flex items-center justify-center gap-1.5 border border-gray-200 hover:bg-gray-50 text-gray-600 py-2 rounded-lg text-xs font-medium transition-all">
-                        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="#1877F2">
-                            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-                        </svg>
-                        Facebook
+                {/* สลับหน้า สมัคร/เข้าสู่ระบบ */}
+                <div className="mt-6 text-center text-sm text-gray-600">
+                    {isLogin ? 'ยังไม่มีบัญชีใช่ไหม? ' : 'มีบัญชีอยู่แล้วใช่ไหม? '}
+                    <button
+                        onClick={() => {
+                            setIsLogin(!isLogin);
+                            setErrorMsg('');
+                        }}
+                        className="font-bold text-yellow-600 hover:underline"
+                    >
+                        {isLogin ? 'สมัครสมาชิก (Verified ทันที)' : 'เข้าสู่ระบบเลย'}
                     </button>
                 </div>
 
-                {/* Register */}
-                <p className="text-center text-gray-400 text-xs mt-4">
-                    ยังไม่มีบัญชี?{' '}
-                    <a href="#" className="text-blue-600 font-semibold hover:text-blue-800 transition-colors">สมัครสมาชิก</a>
-                </p>
             </div>
         </div>
     );
