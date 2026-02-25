@@ -1,14 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { auth, db } from '../firebase'; // เรียกใช้ระบบ Auth และฐานข้อมูล
+import { auth, db } from '../firebase';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
-import { User, Mail, Lock, Phone, UserPlus, Loader2 } from 'lucide-react'; // นำเข้าไอคอน Phone
+import { User, Mail, Lock, Phone, UserPlus, Loader2 } from 'lucide-react';
 
 export default function RegisterPage() {
     const navigate = useNavigate();
     const [formData, setFormData] = useState({
-        name: '', email: '', password: '', confirmPassword: '', phone: '' // มี phone แล้ว
+        name: '', email: '', password: '', confirmPassword: '', phone: ''
     });
     const [isLoading, setIsLoading] = useState(false);
     const [errorMsg, setErrorMsg] = useState('');
@@ -43,7 +43,6 @@ export default function RegisterPage() {
                 displayName: formData.name
             });
 
-            // บันทึกข้อมูลลง Firestore
             await setDoc(doc(db, 'users', user.uid), {
                 uid: user.uid,
                 name: formData.name,
@@ -111,7 +110,6 @@ export default function RegisterPage() {
                         </div>
                     </div>
 
-                    {/* 👇 ช่องกรอกเบอร์โทรศัพท์โผล่มาแล้วครับ! */}
                     <div>
                         <label className="block text-sm font-bold text-gray-700 mb-1">เบอร์โทรศัพท์ (ไว้ติดต่อตอนของหาย)</label>
                         <div className="relative">
