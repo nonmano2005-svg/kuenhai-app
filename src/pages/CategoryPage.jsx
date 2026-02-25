@@ -1,6 +1,8 @@
+import { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { ArrowLeft, MapPin, Calendar, PackageX } from 'lucide-react';
-import items from '../data/mockItems';
+import { collection, getDocs, query, where } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const categoryMap = {
     general: { label: 'ของใช้ทั่วไป', color: 'from-blue-500 to-blue-600' },
@@ -14,7 +16,33 @@ const categoryMap = {
 export default function CategoryPage() {
     const { type } = useParams();
     const category = categoryMap[type] || { label: type, color: 'from-gray-500 to-gray-600' };
-    const filteredItems = items.filter((item) => item.category === type);
+
+    const [filteredItems, setFilteredItems] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchItems = async () => {
+            setLoading(true);
+            try {
+                const q = query(
+                    collection(db, 'lostItems'),
+                    where('category', '==', type)
+                );
+                const snapshot = await getDocs(q);
+                const data = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+                setFilteredItems(data);
+            } catch (error) {
+                console.error('Error fetching category items:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchItems();
+    }, [type]);
 
     return (
         <div className="min-h-screen bg-gray-50 font-kanit">
@@ -32,14 +60,19 @@ export default function CategoryPage() {
                         หมวดหมู่: {category.label}
                     </h1>
                     <p className="text-white/70 mt-2 text-sm sm:text-base">
-                        พบ {filteredItems.length} รายการในหมวดหมู่นี้
+                        {loading ? 'กำลังโหลด...' : `พบ ${filteredItems.length} รายการในหมวดหมู่นี้`}
                     </p>
                 </div>
             </div>
 
             {/* Items Grid */}
             <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-                {filteredItems.length > 0 ? (
+                {loading ? (
+                    <div className="flex flex-col items-center justify-center py-16">
+                        <div className="animate-spin rounded-full h-10 w-10 border-4 border-gray-200 border-t-blue-500"></div>
+                        <span className="mt-4 text-gray-500 text-sm">กำลังโหลดข้อมูล...</span>
+                    </div>
+                ) : filteredItems.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         {filteredItems.map((item) => (
                             <Link

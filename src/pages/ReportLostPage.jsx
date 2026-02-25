@@ -15,18 +15,33 @@ export default function ReportLostPage() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // 🛠️ เทคนิคแปลงรูปเป็นข้อความ (Base64) เพื่อไม่ให้ง้อ Storage
+    // 🛠️ เทคนิคบีบอัดรูปภาพอัตโนมัติ ไม่ให้เกิน 1MB
     const handleImageChange = (e) => {
         const file = e.target.files[0];
         if (file) {
             const reader = new FileReader();
-            reader.readAsDataURL(file); // แปลงรูปเป็นโค้ด
+            reader.readAsDataURL(file);
             reader.onloadend = () => {
-                setImagePreview(reader.result); // เก็บโค้ดรูปไว้โชว์และส่งเข้าฐานข้อมูล
+                const img = new Image();
+                img.src = reader.result;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    // ย่อขนาดให้ความกว้างเหลือแค่ 600px (ขนาดกำลังดีและไฟล์เล็กมาก)
+                    const MAX_WIDTH = 600;
+                    const scaleSize = MAX_WIDTH / img.width;
+                    canvas.width = MAX_WIDTH;
+                    canvas.height = img.height * scaleSize;
+
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+                    // แปลงเป็นโค้ด Base64 คุณภาพ 60%
+                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                    setImagePreview(compressedBase64);
+                };
             };
         }
     };
-
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
