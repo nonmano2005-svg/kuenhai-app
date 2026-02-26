@@ -131,16 +131,15 @@ export default function ItemDetailPage() {
                                     สถานที่พบ
                                 </h3>
                             </div>
-                            <div className="relative">
-                                <img
-                                    src="https://loremflickr.com/600/250/map,bangkok"
-                                    alt="Map location"
-                                    className="w-full h-48 object-cover"
+                            <div className="relative rounded-b-2xl overflow-hidden">
+                                <iframe
+                                    title="Google Map"
+                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(item.location || 'Thailand')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                    className="w-full h-56 border-0"
+                                    allowFullScreen
+                                    loading="lazy"
+                                    referrerPolicy="no-referrer-when-downgrade"
                                 />
-                                <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent" />
-                                <div className="absolute bottom-3 left-3 text-white text-sm font-medium">
-                                    📍 {item.location || 'ไม่ระบุสถานที่'}
-                                </div>
                             </div>
                         </div>
                     </div>
