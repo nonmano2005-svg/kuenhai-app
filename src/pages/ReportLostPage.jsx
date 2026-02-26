@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Upload, MapPin, Calendar, Tag, Bell, Loader2 } from 'lucide-react';
-import { db } from '../firebase'; // 👈 ดึงฐานข้อมูลมาใช้
+import { db, auth } from '../firebase'; // 👈 ดึงฐานข้อมูลและ auth มาใช้
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; // 👈 เครื่องมือส่งข้อมูล
 
 export default function ReportLostPage() {
@@ -51,6 +51,7 @@ export default function ReportLostPage() {
             const docRef = await addDoc(collection(db, 'lostItems'), {
                 ...formData,
                 image: imagePreview || 'https://via.placeholder.com/300x200?text=No+Image',
+                userId: auth.currentUser ? auth.currentUser.uid : null, // เก็บ userId ของผู้โพสต์
                 createdAt: serverTimestamp() // เก็บเวลาที่แจ้งด้วย
             });
 

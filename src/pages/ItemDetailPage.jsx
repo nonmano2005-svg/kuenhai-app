@@ -2,7 +2,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useState, useRef, useEffect } from 'react';
 import { ArrowLeft, MapPin, Calendar, Clock, Phone, MessageCircle, Send, User, Shield, Share2, PackageX, CheckCircle, Bot, Trash2 } from 'lucide-react';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { db, auth } from '../firebase';
 import VerificationBadgeCard from '../components/VerificationBadgeCard';
 
 const aiResponses = [
@@ -19,6 +19,7 @@ export default function ItemDetailPage() {
     const navigate = useNavigate();
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
+    const [posterName, setPosterName] = useState('');
     const [inputValue, setInputValue] = useState('');
     const [messages, setMessages] = useState([
         { id: 1, text: 'สวัสดีครับ ผมคือผู้ช่วย KUEN HAI มีอะไรให้ผมช่วยตามหาไหมครับ?', sender: 'ai', time: 'Now' },
@@ -35,7 +36,27 @@ export default function ItemDetailPage() {
                 const docRef = doc(db, 'lostItems', id);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
-                    setItem({ id: docSnap.id, ...docSnap.data() });
+                    const data = docSnap.data();
+                    setItem({ id: docSnap.id, ...data });
+
+                    // ดึงชื่อผู้โพสต์จาก users collection
+                    if (data.userId) {
+                        try {
+                            const userDocRef = doc(db, 'users', data.userId);
+                            const userDocSnap = await getDoc(userDocRef);
+                            if (userDocSnap.exists()) {
+                                const userData = userDocSnap.data();
+                                setPosterName(userData.displayName || userData.name || 'ผู้ใช้ไม่ระบุชื่อ');
+                            } else {
+                                setPosterName('ผู้ใช้ไม่ระบุชื่อ');
+                            }
+                        } catch (err) {
+                            console.error('Error fetching poster info:', err);
+                            setPosterName('ผู้ใช้ไม่ระบุชื่อ');
+                        }
+                    } else {
+                        setPosterName(data.finderName || 'ผู้ใช้ไม่ระบุชื่อ');
+                    }
                 } else {
                     setItem(null);
                 }
@@ -150,7 +171,7 @@ export default function ItemDetailPage() {
                         <div className="rounded-2xl overflow-hidden shadow-lg border border-gray-100">
                             <img
                                 src={item.image ? item.image.replace('400/300', '800/600') : 'https://via.placeholder.com/800x600?text=No+Image'}
-                                alt={item.title || 'รายการ'}
+                                alt={item.name || 'รายการ'}
                                 className="w-full h-72 sm:h-96 object-cover"
                             />
                         </div>
@@ -183,7 +204,7 @@ export default function ItemDetailPage() {
                         <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-6">
                             <div className="flex items-start justify-between gap-3 mb-4">
                                 <h1 className="text-2xl sm:text-3xl font-bold text-gray-800">
-                                    {item.title || 'ไม่ระบุชื่อ'}
+                                    {item.name || 'ไม่ระบุชื่อ'}
                                 </h1>
                                 <span className={`flex-shrink-0 text-xs font-semibold px-3 py-1.5 rounded-full ${(item.status === 'พบของ') ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
                                     {item.status || 'ยังไม่พบเจ้าของ'}
@@ -227,7 +248,7 @@ export default function ItemDetailPage() {
                                     className="w-14 h-14 rounded-full object-cover border-2 border-navy/20"
                                 />
                                 <div className="flex-1">
-                                    <p className="font-semibold text-gray-800">{item.finderName || 'ผู้ใช้ไม่ระบุชื่อ'}</p>
+                                    <p className="font-semibold text-gray-800">{posterName || item.finderName || 'ผู้ใช้ไม่ระบุชื่อ'}</p>
                                     <p className="text-gray-400 text-xs mt-0.5">ผู้พบของ • ยืนยันตัวตนแล้ว ✓</p>
                                 </div>
                             </div>
