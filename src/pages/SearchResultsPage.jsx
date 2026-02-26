@@ -1,19 +1,50 @@
+import { useState, useEffect } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, SearchX } from 'lucide-react';
-import items, { TAG_COLORS } from '../data/mockItems';
+import { ArrowLeft, MapPin, Calendar, SearchX, Loader2 } from 'lucide-react';
+import { collection, getDocs } from 'firebase/firestore';
+import { db } from '../firebase';
 
 export default function SearchResultsPage() {
     const [searchParams] = useSearchParams();
     const query = searchParams.get('q') || '';
     const category = searchParams.get('category') || 'all';
 
-    const results = query
-        ? items.filter((item) => {
-            const matchesTitle = item.title.toLowerCase().includes(query.toLowerCase());
-            const matchesCategory = category === 'all' || item.category === category;
-            return matchesTitle && matchesCategory;
-        })
-        : [];
+    const [results, setResults] = useState([]);
+    const [loading, setLoading] = useState(true);
+
+    useEffect(() => {
+        const fetchAndFilter = async () => {
+            setLoading(true);
+            try {
+                const snapshot = await getDocs(collection(db, 'lostItems'));
+                const allItems = snapshot.docs.map((doc) => ({
+                    id: doc.id,
+                    ...doc.data(),
+                }));
+
+                // กรองผลลัพธ์ฝั่ง client ตามชื่อและหมวดหมู่
+                const filtered = query
+                    ? allItems.filter((item) => {
+                        const name = (item.name || '').toLowerCase();
+                        const description = (item.description || '').toLowerCase();
+                        const location = (item.location || '').toLowerCase();
+                        const q = query.toLowerCase();
+                        const matchesText = name.includes(q) || description.includes(q) || location.includes(q);
+                        const matchesCategory = category === 'all' || item.category === category;
+                        return matchesText && matchesCategory;
+                    })
+                    : [];
+
+                setResults(filtered);
+            } catch (error) {
+                console.error('Error fetching items for search:', error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAndFilter();
+    }, [query, category]);
 
     return (
         <div className="min-h-screen bg-gray-50 font-kanit">
@@ -31,14 +62,19 @@ export default function SearchResultsPage() {
                         ผลการค้นหา: "{query}"
                     </h1>
                     <p className="text-white/60 mt-2 text-sm sm:text-base">
-                        พบ {results.length} รายการ
+                        {loading ? 'กำลังค้นหา...' : `พบ ${results.length} รายการ`}
                     </p>
                 </div>
             </div>
 
             {/* Results Grid */}
             <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
-                {results.length > 0 ? (
+                {loading ? (
+                    <div className="flex items-center justify-center py-16">
+                        <Loader2 className="w-10 h-10 text-navy animate-spin" />
+                        <span className="ml-4 text-gray-500 text-sm">กำลังค้นหา...</span>
+                    </div>
+                ) : results.length > 0 ? (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                         {results.map((item) => (
                             <Link
@@ -49,18 +85,18 @@ export default function SearchResultsPage() {
                                 {/* Item Image */}
                                 <div className="h-44 overflow-hidden relative">
                                     <img
-                                        src={item.image}
-                                        alt={item.title}
+                                        src={item.image || 'https://via.placeholder.com/400x300?text=No+Image'}
+                                        alt={item.name || 'รายการ'}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     />
                                     <div className="absolute top-3 left-3">
-                                        <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${TAG_COLORS[item.tag] || 'bg-gray-100 text-gray-700'}`}>
-                                            {item.tag}
+                                        <span className="text-[11px] font-semibold px-2.5 py-1 rounded-full bg-blue-100 text-blue-700">
+                                            {item.tag || item.category || 'ทั่วไป'}
                                         </span>
                                     </div>
                                     <div className="absolute top-3 right-3">
                                         <span className={`text-[11px] font-semibold px-2.5 py-1 rounded-full ${item.status === 'พบของ' ? 'bg-emerald-500 text-white' : 'bg-amber-500 text-white'}`}>
-                                            {item.status}
+                                            {item.status || 'ยังไม่พบเจ้าของ'}
                                         </span>
                                     </div>
                                 </div>
@@ -68,15 +104,15 @@ export default function SearchResultsPage() {
                                 {/* Card Content */}
                                 <div className="p-5">
                                     <h3 className="font-semibold text-gray-800 text-lg group-hover:text-navy transition-colors">
-                                        {item.title}
+                                        {item.name || 'ไม่ระบุชื่อ'}
                                     </h3>
                                     <div className="flex items-center gap-1.5 text-gray-500 text-sm mt-2">
                                         <MapPin className="w-3.5 h-3.5 flex-shrink-0" />
-                                        {item.location}
+                                        {item.location || 'ไม่ระบุสถานที่'}
                                     </div>
                                     <div className="flex items-center gap-1.5 text-gray-500 text-sm mt-1">
                                         <Calendar className="w-3.5 h-3.5 flex-shrink-0" />
-                                        {item.date}
+                                        {item.date || 'ไม่ระบุวันที่'}
                                     </div>
                                 </div>
                             </Link>
@@ -90,7 +126,7 @@ export default function SearchResultsPage() {
                             ไม่พบผลลัพธ์สำหรับ "{query}"
                         </h2>
                         <p className="text-gray-400 mt-3 text-sm max-w-md mx-auto">
-                            ลองค้นหาด้วยคำอื่น เช่น "กระเป๋า", "กุญแจ", "โทรศัพท์", "แมว"
+                            ลองค้นหาด้วยคำอื่น เช่น "กระเป๋า", "กุญแจ", "โทรศัพท์"
                         </p>
                         <Link
                             to="/"
