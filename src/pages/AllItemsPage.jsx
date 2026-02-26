@@ -9,6 +9,7 @@ export default function AllItemsPage() {
     const [loading, setLoading] = useState(true);
     const [searchParams] = useSearchParams();
     const selectedCategory = searchParams.get('category');
+    const searchQuery = searchParams.get('query') || '';
 
     useEffect(() => {
         const fetchAllItems = async () => {
@@ -21,10 +22,21 @@ export default function AllItemsPage() {
                     q = collection(db, 'lostItems');
                 }
                 const snapshot = await getDocs(q);
-                const data = snapshot.docs.map((doc) => ({
+                let data = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
                 }));
+
+                // กรองด้วย text query (ค้นหาใน name, description, location)
+                if (searchQuery) {
+                    const lowerQ = searchQuery.toLowerCase();
+                    data = data.filter((item) =>
+                        (item.name || '').toLowerCase().includes(lowerQ) ||
+                        (item.description || '').toLowerCase().includes(lowerQ) ||
+                        (item.location || '').toLowerCase().includes(lowerQ)
+                    );
+                }
+
                 // เรียงฝั่ง client: ใหม่สุดก่อน
                 data.sort((a, b) => {
                     const timeA = a.createdAt?.toMillis?.() || 0;
@@ -40,7 +52,17 @@ export default function AllItemsPage() {
         };
 
         fetchAllItems();
-    }, [selectedCategory]);
+    }, [selectedCategory, searchQuery]);
+
+    // สร้างชื่อหัวข้อตาม filter ที่เลือก
+    const getTitle = () => {
+        if (searchQuery && selectedCategory) return `"${searchQuery}" ในหมวด ${selectedCategory}`;
+        if (searchQuery) return `ผลการค้นหา: "${searchQuery}"`;
+        if (selectedCategory) return `หมวดหมู่: ${selectedCategory}`;
+        return 'รายการประกาศทั้งหมด';
+    };
+
+    const hasFilters = searchQuery || selectedCategory;
 
     return (
         <div className="min-h-screen bg-gray-50 font-kanit">
@@ -56,15 +78,15 @@ export default function AllItemsPage() {
                     </Link>
                     <div className="flex items-center gap-3 mb-2">
                         <Search className="w-8 h-8 text-accent" />
-                        <h1 className="text-3xl sm:text-4xl font-bold text-white">
-                            {selectedCategory ? `หมวดหมู่: ${selectedCategory}` : 'รายการประกาศทั้งหมด'}
+                        <h1 className="text-2xl sm:text-4xl font-bold text-white">
+                            {getTitle()}
                         </h1>
                     </div>
                     <div className="flex items-center gap-3 mt-2">
                         <p className="text-white/60 text-sm sm:text-base">
                             พบทั้งหมด {items.length} รายการ
                         </p>
-                        {selectedCategory && (
+                        {hasFilters && (
                             <Link
                                 to="/all-items"
                                 className="inline-flex items-center gap-1 text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition-colors"
