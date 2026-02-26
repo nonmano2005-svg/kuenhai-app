@@ -1,23 +1,31 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowLeft, MapPin, Calendar, Search, Loader2 } from 'lucide-react';
-import { collection, getDocs } from 'firebase/firestore';
+import { Link, useSearchParams } from 'react-router-dom';
+import { ArrowLeft, MapPin, Calendar, Search, Loader2, X } from 'lucide-react';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function AllItemsPage() {
     const [items, setItems] = useState([]);
     const [loading, setLoading] = useState(true);
+    const [searchParams] = useSearchParams();
+    const selectedCategory = searchParams.get('category');
 
     useEffect(() => {
         const fetchAllItems = async () => {
+            setLoading(true);
             try {
-                // ดึงทุก document โดยไม่ใช้ orderBy เพื่อไม่ให้ Firestore กรอง doc ที่ไม่มี field createdAt ออก
-                const snapshot = await getDocs(collection(db, 'lostItems'));
+                let q;
+                if (selectedCategory) {
+                    q = query(collection(db, 'lostItems'), where('category', '==', selectedCategory));
+                } else {
+                    q = collection(db, 'lostItems');
+                }
+                const snapshot = await getDocs(q);
                 const data = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
                 }));
-                // เรียงฝั่ง client: ใหม่สุดก่อน, doc ที่ไม่มี createdAt จะอยู่ท้ายสุด
+                // เรียงฝั่ง client: ใหม่สุดก่อน
                 data.sort((a, b) => {
                     const timeA = a.createdAt?.toMillis?.() || 0;
                     const timeB = b.createdAt?.toMillis?.() || 0;
@@ -32,7 +40,7 @@ export default function AllItemsPage() {
         };
 
         fetchAllItems();
-    }, []);
+    }, [selectedCategory]);
 
     return (
         <div className="min-h-screen bg-gray-50 font-kanit">
@@ -49,12 +57,23 @@ export default function AllItemsPage() {
                     <div className="flex items-center gap-3 mb-2">
                         <Search className="w-8 h-8 text-accent" />
                         <h1 className="text-3xl sm:text-4xl font-bold text-white">
-                            รายการประกาศทั้งหมด
+                            {selectedCategory ? `หมวดหมู่: ${selectedCategory}` : 'รายการประกาศทั้งหมด'}
                         </h1>
                     </div>
-                    <p className="text-white/60 mt-2 text-sm sm:text-base">
-                        พบทั้งหมด {items.length} รายการ
-                    </p>
+                    <div className="flex items-center gap-3 mt-2">
+                        <p className="text-white/60 text-sm sm:text-base">
+                            พบทั้งหมด {items.length} รายการ
+                        </p>
+                        {selectedCategory && (
+                            <Link
+                                to="/all-items"
+                                className="inline-flex items-center gap-1 text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1 rounded-full transition-colors"
+                            >
+                                <X className="w-3 h-3" />
+                                ล้างตัวกรอง
+                            </Link>
+                        )}
+                    </div>
                 </div>
             </div>
 
