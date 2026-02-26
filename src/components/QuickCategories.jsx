@@ -16,7 +16,7 @@ export default function QuickCategories() {
                             return (
                                 <Link
                                     key={type}
-                                    to={type === 'settings' ? '/settings' : `/all-items?category=${encodeURIComponent(cat.label)}`}
+                                    to={`/all-items?category=${encodeURIComponent(cat.label)}`}
                                     onClick={() => handleClick(type)}
                                     className="group flex flex-col items-center gap-2 p-3 rounded-xl hover:bg-gray-50 transition-all duration-200"
                                 >

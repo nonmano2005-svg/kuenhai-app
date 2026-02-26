@@ -130,10 +130,11 @@ export default function ReportLostPage() {
                             <select name="category" required value={formData.category} onChange={handleChange}
                                 className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none bg-white">
                                 <option value="">เลือกหมวดหมู่</option>
-                                <option value="กระเป๋า">กระเป๋า</option>
+                                <option value="ของใช้ทั่วไป">ของใช้ทั่วไป</option>
+                                <option value="กุญแจ">กุญแจ</option>
                                 <option value="อุปกรณ์อิเล็กทรอนิกส์">อุปกรณ์อิเล็กทรอนิกส์</option>
                                 <option value="เอกสารสำคัญ">เอกสารสำคัญ</option>
-                                <option value="กุญแจ">กุญแจ</option>
+                                <option value="สัตว์เลี้ยง">สัตว์เลี้ยง</option>
                                 <option value="อื่นๆ">อื่นๆ</option>
                             </select>
                         </div>
