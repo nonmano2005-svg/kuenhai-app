@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
-import { Upload, MapPin, Calendar, Tag, Bell, Loader2, Phone, MessageSquare, Handshake } from 'lucide-react';
+import { Upload, MapPin, Calendar, Tag, Bell, Loader2, Phone, MessageSquare, Handshake, User } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function ReportLostPage() {
     const [formData, setFormData] = useState({
         name: '', category: '', description: '', location: '', date: '',
-        contactPhone: '', otherContact: '', meetingLocation: ''
+        reporterName: '', contactPhone: '', otherContact: '', meetingLocation: ''
     });
     const [imagePreview, setImagePreview] = useState(null);
     const [reportedItems, setReportedItems] = useState([]);
@@ -63,7 +63,7 @@ export default function ReportLostPage() {
             setReportedItems([newItem, ...reportedItems]);
 
             // ล้างฟอร์ม
-            setFormData({ name: '', category: '', description: '', location: '', date: '', contactPhone: '', otherContact: '', meetingLocation: '' });
+            setFormData({ name: '', category: '', description: '', location: '', date: '', reporterName: '', contactPhone: '', otherContact: '', meetingLocation: '' });
             setImagePreview(null);
             alert('✅ แจ้งรายการสิ่งของหาย และบันทึกลงฐานข้อมูลสำเร็จ!');
         } catch (error) {
@@ -168,6 +168,17 @@ export default function ReportLostPage() {
                                 ข้อมูลผู้แจ้ง / ช่องทางติดต่อ
                             </h3>
                             <p className="text-xs text-gray-400 mt-1">เพื่อให้ผู้พบสามารถติดต่อนัดรับของคืนได้สะดวก</p>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">ชื่อผู้แจ้ง <span className="text-red-500">*</span></label>
+                            <div className="relative">
+                                <User className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+                                <input type="text" name="reporterName" required value={formData.reporterName} onChange={handleChange}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
+                                    placeholder="ชื่อ-นามสกุล ผู้แจ้ง"
+                                />
+                            </div>
                         </div>
 
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
