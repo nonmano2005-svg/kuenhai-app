@@ -235,7 +235,16 @@ export default function ItemDetailPage() {
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 mt-5">
-                                <button className="flex-1 flex items-center justify-center gap-2 bg-navy hover:bg-navy-dark text-white py-3 rounded-xl font-medium text-sm transition-colors shadow-md hover:shadow-lg">
+                                <button
+                                    onClick={() => {
+                                        if (item.contactPhone) {
+                                            window.location.href = `tel:${item.contactPhone}`;
+                                        } else {
+                                            alert('ไม่พบเบอร์โทรศัพท์ติดต่อ');
+                                        }
+                                    }}
+                                    className="flex-1 flex items-center justify-center gap-2 bg-navy hover:bg-navy-dark text-white py-3 rounded-xl font-medium text-sm transition-colors shadow-md hover:shadow-lg"
+                                >
                                     <Phone className="w-4 h-4" />
                                     ติดต่อผู้พบ
                                 </button>
