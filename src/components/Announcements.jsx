@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ArrowRight, MapPin, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
-import { collection, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { collection, getDocs } from 'firebase/firestore';
 import { db } from '../firebase';
 
 export default function Announcements() {
@@ -11,17 +11,18 @@ export default function Announcements() {
     useEffect(() => {
         const fetchItems = async () => {
             try {
-                const q = query(
-                    collection(db, 'lostItems'),
-                    orderBy('date', 'desc'),
-                    limit(5)
-                );
-                const snapshot = await getDocs(q);
+                const snapshot = await getDocs(collection(db, 'lostItems'));
                 const data = snapshot.docs.map((doc) => ({
                     id: doc.id,
                     ...doc.data(),
                 }));
-                setItems(data);
+                // เรียงฝั่ง client แล้วเอาแค่ 8 อันแรก
+                data.sort((a, b) => {
+                    const timeA = a.createdAt?.toMillis?.() || 0;
+                    const timeB = b.createdAt?.toMillis?.() || 0;
+                    return timeB - timeA;
+                });
+                setItems(data.slice(0, 8));
             } catch (error) {
                 console.error('Error fetching announcements:', error);
             } finally {
@@ -59,7 +60,7 @@ export default function Announcements() {
                     </div>
                 ) : (
                     /* Cards Grid */
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                         {items.map((card) => (
                             <Link
                                 to={`/item/${card.id}`}
@@ -70,7 +71,7 @@ export default function Announcements() {
                                 <div className="h-32 relative overflow-hidden">
                                     <img
                                         src={card.image}
-                                        alt={card.title}
+                                        alt={card.name || 'รายการ'}
                                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
                                     />
                                     <div className="absolute top-2 right-2">
@@ -83,7 +84,7 @@ export default function Announcements() {
                                 {/* Card Content */}
                                 <div className="p-4">
                                     <h3 className="text-white font-medium text-sm mb-2 group-hover:text-accent transition-colors line-clamp-1">
-                                        {card.title}
+                                        {card.name || 'ไม่ระบุชื่อ'}
                                     </h3>
                                     <div className="flex items-center gap-1 text-white/40 text-xs mb-1">
                                         <MapPin className="w-3 h-3" />
