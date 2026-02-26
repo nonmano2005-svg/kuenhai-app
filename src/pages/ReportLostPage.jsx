@@ -164,7 +164,7 @@ export default function ReportLostPage() {
                         {/* ===== ส่วนที่ 2: ข้อมูลผู้แจ้ง ===== */}
                         <div className="pb-2 border-b border-gray-100 pt-4">
                             <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
-                                <UserCircle className="w-5 h-5 text-blue-500" />
+                                <Phone className="w-5 h-5 text-blue-500" />
                                 ข้อมูลผู้แจ้ง / ช่องทางติดต่อ
                             </h3>
                             <p className="text-xs text-gray-400 mt-1">เพื่อให้ผู้พบสามารถติดต่อนัดรับของคืนได้สะดวก</p>
