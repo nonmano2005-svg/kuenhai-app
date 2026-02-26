@@ -206,7 +206,7 @@ export default function ItemDetailPage() {
                         </div>
 
                         {/* Finder Profile */}
-                        <div className="bg-white rounded-2xl shadow-md border border-gray-100 p-5">
+                        <div className="bg-slate-50 rounded-2xl shadow-md border border-gray-200 p-6">
                             <h3 className="font-semibold text-gray-700 mb-4 flex items-center gap-2">
                                 <Shield className="w-4 h-4 text-navy" />
                                 ข้อมูลผู้แจ้ง
@@ -217,27 +217,34 @@ export default function ItemDetailPage() {
                                 <img
                                     src={item.reporterImage || item.finderImage || 'https://ui-avatars.com/api/?name=User&background=0D1B2A&color=fff&size=100'}
                                     alt={posterName || item.finderName || 'ผู้แจ้ง'}
-                                    className="w-14 h-14 rounded-full object-cover border-2 border-navy/20"
+                                    className="w-16 h-16 rounded-full object-cover border-2 border-navy/20 shadow-sm"
                                 />
                                 <div className="flex-1">
-                                    <p className="font-semibold text-gray-800">{item.reporterName || posterName || item.finderName || 'ผู้ใช้ไม่ระบุชื่อ'}</p>
+                                    <p className="text-xl font-bold text-gray-800">{item.reporterName || posterName || item.finderName || 'ผู้ใช้ไม่ระบุชื่อ'}</p>
                                     <p className="text-gray-400 text-xs mt-0.5">ผู้แจ้งของหาย • ยืนยันตัวตนแล้ว ✓</p>
                                 </div>
                             </div>
 
                             {/* Contact Details */}
-                            <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                                <div className="flex items-center gap-3 text-sm">
-                                    <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                            <div className="mt-5 pt-5 border-t border-gray-200 space-y-4">
+                                <a
+                                    href={item.contactPhone ? `tel:${item.contactPhone}` : '#'}
+                                    onClick={(e) => { if (!item.contactPhone) { e.preventDefault(); alert('ไม่พบเบอร์โทรศัพท์ติดต่อ'); } }}
+                                    className="flex items-center gap-3 text-sm p-3 -mx-3 rounded-xl hover:bg-green-50 transition-colors cursor-pointer group"
+                                >
+                                    <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 transition-colors">
                                         <Phone className="w-4 h-4 text-green-600" />
                                     </div>
-                                    <div>
+                                    <div className="flex-1">
                                         <p className="text-gray-400 text-xs">เบอร์โทรติดต่อ</p>
-                                        <p className="font-medium text-gray-800">{item.contactPhone || '-'}</p>
+                                        <p className="font-semibold text-gray-800 group-hover:text-green-700 transition-colors">{item.contactPhone || '-'}</p>
                                     </div>
-                                </div>
+                                    {item.contactPhone && (
+                                        <span className="text-xs text-green-600 font-medium bg-green-50 px-2 py-0.5 rounded-full group-hover:bg-green-100">กดโทร</span>
+                                    )}
+                                </a>
                                 <div className="flex items-center gap-3 text-sm">
-                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                                         <MessageCircle className="w-4 h-4 text-blue-600" />
                                     </div>
                                     <div>
@@ -246,7 +253,7 @@ export default function ItemDetailPage() {
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm">
-                                    <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                    <div className="w-9 h-9 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0">
                                         <MapPin className="w-4 h-4 text-amber-600" />
                                     </div>
                                     <div>
