@@ -1,4 +1,4 @@
-import { Search, ChevronDown, HelpCircle, MapPin, LogIn, Menu, X } from 'lucide-react';
+import { Search, ChevronDown, HelpCircle, MapPin, Menu, X } from 'lucide-react';
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 
@@ -70,10 +70,7 @@ export default function Header() {
                             <MapPin className="w-4 h-4" />
                             การติดตาม
                         </a>
-                        <Link to="/login" className="flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-full text-sm transition-colors border border-white/20">
-                            <LogIn className="w-4 h-4" />
-                            ลงชื่อเข้าใช้
-                        </Link>
+
                     </nav>
 
                     {/* Mobile Menu Button */}
@@ -115,9 +112,7 @@ export default function Header() {
                         <a href="#" className="flex items-center gap-2 text-white/80 hover:text-white text-sm py-2 transition-colors">
                             <MapPin className="w-4 h-4" /> การติดตาม
                         </a>
-                        <Link to="/login" className="flex items-center gap-2 bg-white/10 text-white px-4 py-2 rounded-full text-sm text-center justify-center transition-colors">
-                            <LogIn className="w-4 h-4" /> ลงชื่อเข้าใช้
-                        </Link>
+
                     </div>
                 </div>
             )}
