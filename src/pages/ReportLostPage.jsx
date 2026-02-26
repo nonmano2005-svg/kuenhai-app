@@ -1,61 +1,65 @@
 import React, { useState } from 'react';
-import { Upload, MapPin, Calendar, Tag, Bell, Loader2 } from 'lucide-react';
-import { db, auth } from '../firebase'; // 👈 ดึงฐานข้อมูลและ auth มาใช้
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore'; // 👈 เครื่องมือส่งข้อมูล
+import { Upload, MapPin, Calendar, Tag, Bell, Loader2, Phone, MessageSquare, Handshake, UserCircle } from 'lucide-react';
+import { db, auth } from '../firebase';
+import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function ReportLostPage() {
     const [formData, setFormData] = useState({
-        name: '', category: '', description: '', location: '', date: ''
+        name: '', category: '', description: '', location: '', date: '',
+        contactPhone: '', otherContact: '', meetingLocation: ''
     });
     const [imagePreview, setImagePreview] = useState(null);
+    const [reporterImagePreview, setReporterImagePreview] = useState(null);
     const [reportedItems, setReportedItems] = useState([]);
-    const [isLoading, setIsLoading] = useState(false); // สถานะปุ่มหมุนๆ ตอนกดส่ง
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleChange = (e) => {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    // 🛠️ เทคนิคบีบอัดรูปภาพอัตโนมัติ ไม่ให้เกิน 1MB
+    // บีบอัดรูปภาพอัตโนมัติ (ใช้ร่วมกันทั้ง 2 ช่อง)
+    const compressImage = (file, maxWidth, callback) => {
+        const reader = new FileReader();
+        reader.readAsDataURL(file);
+        reader.onloadend = () => {
+            const img = new Image();
+            img.src = reader.result;
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                const scaleSize = maxWidth / img.width;
+                canvas.width = maxWidth;
+                canvas.height = img.height * scaleSize;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
+                callback(compressedBase64);
+            };
+        };
+    };
+
     const handleImageChange = (e) => {
         const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.readAsDataURL(file);
-            reader.onloadend = () => {
-                const img = new Image();
-                img.src = reader.result;
-                img.onload = () => {
-                    const canvas = document.createElement('canvas');
-                    // ย่อขนาดให้ความกว้างเหลือแค่ 600px (ขนาดกำลังดีและไฟล์เล็กมาก)
-                    const MAX_WIDTH = 600;
-                    const scaleSize = MAX_WIDTH / img.width;
-                    canvas.width = MAX_WIDTH;
-                    canvas.height = img.height * scaleSize;
-
-                    const ctx = canvas.getContext('2d');
-                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
-                    // แปลงเป็นโค้ด Base64 คุณภาพ 60%
-                    const compressedBase64 = canvas.toDataURL('image/jpeg', 0.6);
-                    setImagePreview(compressedBase64);
-                };
-            };
-        }
+        if (file) compressImage(file, 600, setImagePreview);
     };
+
+    const handleReporterImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) compressImage(file, 300, setReporterImagePreview);
+    };
+
     const handleSubmit = async (e) => {
         e.preventDefault();
         setIsLoading(true);
 
         try {
-            // 1. ส่งข้อมูลทั้งหมด (รวมถึงรูปที่แปลงเป็นโค้ดแล้ว) ไปเก็บในฐานข้อมูล Firestore
             const docRef = await addDoc(collection(db, 'lostItems'), {
                 ...formData,
                 image: imagePreview || 'https://via.placeholder.com/300x200?text=No+Image',
-                userId: auth.currentUser ? auth.currentUser.uid : null, // เก็บ userId ของผู้โพสต์
-                createdAt: serverTimestamp() // เก็บเวลาที่แจ้งด้วย
+                reporterImage: reporterImagePreview || null,
+                userId: auth.currentUser ? auth.currentUser.uid : null,
+                createdAt: serverTimestamp()
             });
 
-            // 2. เอามาโชว์ด้านล่างแบบ Real-time
             const newItem = {
                 id: docRef.id,
                 ...formData,
@@ -63,11 +67,11 @@ export default function ReportLostPage() {
             };
             setReportedItems([newItem, ...reportedItems]);
 
-            // 3. ล้างฟอร์ม
-            setFormData({ name: '', category: '', description: '', location: '', date: '' });
+            // ล้างฟอร์ม
+            setFormData({ name: '', category: '', description: '', location: '', date: '', contactPhone: '', otherContact: '', meetingLocation: '' });
             setImagePreview(null);
+            setReporterImagePreview(null);
             alert('✅ แจ้งรายการสิ่งของหาย และบันทึกลงฐานข้อมูลสำเร็จ!');
-
         } catch (error) {
             console.error('Error:', error);
             alert('❌ เกิดข้อผิดพลาด: รบกวนตรวจสอบว่าเปิด Firestore เป็น Test Mode หรือยังครับ');
@@ -87,6 +91,14 @@ export default function ReportLostPage() {
             <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 mb-10">
                     <form onSubmit={handleSubmit} className="space-y-6">
+
+                        {/* ===== ส่วนที่ 1: ข้อมูลสิ่งของ ===== */}
+                        <div className="pb-2 border-b border-gray-100">
+                            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <Tag className="w-5 h-5 text-yellow-500" />
+                                ข้อมูลสิ่งของ
+                            </h3>
+                        </div>
 
                         <div>
                             <label className="block text-sm font-bold text-gray-700 mb-2">ชื่อสิ่งของ <span className="text-red-500">*</span></label>
@@ -137,7 +149,7 @@ export default function ReportLostPage() {
                         </div>
 
                         <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">อัปโหลดรูปภาพ (ขนาดไม่เกิน 5MB)</label>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">อัปโหลดรูปภาพสิ่งของ (ขนาดไม่เกิน 5MB)</label>
                             <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-xl hover:bg-gray-50 transition relative">
                                 <div className="space-y-1 text-center">
                                     {imagePreview ? (
@@ -151,6 +163,69 @@ export default function ReportLostPage() {
                                             <input type="file" className="sr-only" accept="image/*" onChange={handleImageChange} />
                                         </label>
                                     </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* ===== ส่วนที่ 2: ข้อมูลผู้แจ้ง ===== */}
+                        <div className="pb-2 border-b border-gray-100 pt-4">
+                            <h3 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+                                <UserCircle className="w-5 h-5 text-blue-500" />
+                                ข้อมูลผู้แจ้ง / ช่องทางติดต่อ
+                            </h3>
+                            <p className="text-xs text-gray-400 mt-1">เพื่อให้ผู้พบสามารถติดต่อนัดรับของคืนได้สะดวก</p>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">เบอร์โทรติดต่อ <span className="text-red-500">*</span></label>
+                                <div className="relative">
+                                    <Phone className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+                                    <input type="tel" name="contactPhone" required value={formData.contactPhone} onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
+                                        placeholder="0812345678"
+                                    />
+                                </div>
+                            </div>
+                            <div>
+                                <label className="block text-sm font-bold text-gray-700 mb-2">ช่องทางติดต่ออื่นๆ</label>
+                                <div className="relative">
+                                    <MessageSquare className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+                                    <input type="text" name="otherContact" value={formData.otherContact} onChange={handleChange}
+                                        className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
+                                        placeholder="Line ID, Facebook Link ฯลฯ"
+                                    />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">สถานที่นัดรับของ</label>
+                            <div className="relative">
+                                <Handshake className="absolute left-3 top-3.5 h-5 w-5 text-gray-400" />
+                                <input type="text" name="meetingLocation" value={formData.meetingLocation} onChange={handleChange}
+                                    className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
+                                    placeholder="เช่น ล็อบบี้ตึก A, หน้าเซเว่น ฯลฯ"
+                                />
+                            </div>
+                        </div>
+
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">รูปโปรไฟล์ผู้แจ้ง</label>
+                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-blue-200 border-dashed rounded-xl hover:bg-blue-50/50 transition relative">
+                                <div className="space-y-1 text-center">
+                                    {reporterImagePreview ? (
+                                        <img src={reporterImagePreview} alt="Reporter" className="mx-auto h-24 w-24 object-cover rounded-full border-2 border-blue-300" />
+                                    ) : (
+                                        <UserCircle className="mx-auto h-12 w-12 text-blue-300" />
+                                    )}
+                                    <div className="flex justify-center text-sm text-gray-600 mt-2">
+                                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
+                                            <span>อัปโหลดรูปโปรไฟล์</span>
+                                            <input type="file" className="sr-only" accept="image/*" onChange={handleReporterImageChange} />
+                                        </label>
+                                    </div>
+                                    <p className="text-xs text-gray-400">เพื่อให้ผู้พบสามารถยืนยันตัวตนคุณได้</p>
                                 </div>
                             </div>
                         </div>
@@ -190,6 +265,12 @@ export default function ReportLostPage() {
                                                 <Calendar className="h-4 w-4 text-blue-400" />
                                                 <span>{item.date}</span>
                                             </div>
+                                            {item.contactPhone && (
+                                                <div className="flex items-center gap-2">
+                                                    <Phone className="h-4 w-4 text-green-400" />
+                                                    <span>{item.contactPhone}</span>
+                                                </div>
+                                            )}
                                         </div>
                                     </div>
                                 </div>
