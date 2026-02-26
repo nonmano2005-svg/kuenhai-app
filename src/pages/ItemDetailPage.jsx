@@ -197,49 +197,41 @@ export default function ItemDetailPage() {
                                     className="w-14 h-14 rounded-full object-cover border-2 border-navy/20"
                                 />
                                 <div className="flex-1">
-                                    <p className="font-semibold text-gray-800">{posterName || item.finderName || 'ผู้ใช้ไม่ระบุชื่อ'}</p>
+                                    <p className="font-semibold text-gray-800">{item.reporterName || posterName || item.finderName || 'ผู้ใช้ไม่ระบุชื่อ'}</p>
                                     <p className="text-gray-400 text-xs mt-0.5">ผู้แจ้งของหาย • ยืนยันตัวตนแล้ว ✓</p>
                                 </div>
                             </div>
 
                             {/* Contact Details */}
-                            {(item.contactPhone || item.otherContact || item.meetingLocation) && (
-                                <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
-                                    {item.contactPhone && (
-                                        <div className="flex items-center gap-3 text-sm">
-                                            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
-                                                <Phone className="w-4 h-4 text-green-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-xs">เบอร์โทรติดต่อ</p>
-                                                <p className="font-medium text-gray-800">{item.contactPhone}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {item.otherContact && (
-                                        <div className="flex items-center gap-3 text-sm">
-                                            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
-                                                <MessageCircle className="w-4 h-4 text-blue-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-xs">ช่องทางอื่นๆ</p>
-                                                <p className="font-medium text-gray-800">{item.otherContact}</p>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {item.meetingLocation && (
-                                        <div className="flex items-center gap-3 text-sm">
-                                            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
-                                                <MapPin className="w-4 h-4 text-amber-600" />
-                                            </div>
-                                            <div>
-                                                <p className="text-gray-400 text-xs">สถานที่นัดรับของ</p>
-                                                <p className="font-medium text-gray-800">{item.meetingLocation}</p>
-                                            </div>
-                                        </div>
-                                    )}
+                            <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                                <div className="flex items-center gap-3 text-sm">
+                                    <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center flex-shrink-0">
+                                        <Phone className="w-4 h-4 text-green-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-400 text-xs">เบอร์โทรติดต่อ</p>
+                                        <p className="font-medium text-gray-800">{item.contactPhone || '-'}</p>
+                                    </div>
                                 </div>
-                            )}
+                                <div className="flex items-center gap-3 text-sm">
+                                    <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center flex-shrink-0">
+                                        <MessageCircle className="w-4 h-4 text-blue-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-400 text-xs">ช่องทางอื่นๆ</p>
+                                        <p className="font-medium text-gray-800">{item.otherContact || '-'}</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm">
+                                    <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                        <MapPin className="w-4 h-4 text-amber-600" />
+                                    </div>
+                                    <div>
+                                        <p className="text-gray-400 text-xs">สถานที่นัดรับของ</p>
+                                        <p className="font-medium text-gray-800">{item.meetingLocation || '-'}</p>
+                                    </div>
+                                </div>
+                            </div>
 
                             {/* Action Buttons */}
                             <div className="flex gap-3 mt-5">
