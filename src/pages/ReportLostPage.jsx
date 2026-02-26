@@ -2,6 +2,26 @@ import React, { useState } from 'react';
 import { Upload, MapPin, Calendar, Tag, Bell, Loader2, Phone, MessageSquare, Handshake, User } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+
+// แก้ไข default icon ของ Leaflet (ไม่งั้นจะไม่แสดง marker)
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+// Component สำหรับคลิกย้ายหมุดบนแผนที่
+function LocationMarker({ pinLocation, setPinLocation }) {
+    useMapEvents({
+        click(e) {
+            setPinLocation({ lat: e.latlng.lat, lng: e.latlng.lng });
+        },
+    });
+    return <Marker position={[pinLocation.lat, pinLocation.lng]} />;
+}
 
 export default function ReportLostPage() {
     const [formData, setFormData] = useState({
@@ -9,6 +29,7 @@ export default function ReportLostPage() {
         reporterName: '', contactPhone: '', otherContact: '', meetingLocation: ''
     });
     const [imagePreview, setImagePreview] = useState(null);
+    const [pinLocation, setPinLocation] = useState({ lat: 13.7563, lng: 100.5018 }); // default: กรุงเทพ
     const [reportedItems, setReportedItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -51,6 +72,7 @@ export default function ReportLostPage() {
             const docRef = await addDoc(collection(db, 'lostItems'), {
                 ...formData,
                 image: imagePreview || 'https://via.placeholder.com/300x200?text=No+Image',
+                pinLocation: pinLocation,
                 userId: auth.currentUser ? auth.currentUser.uid : null,
                 createdAt: serverTimestamp()
             });
@@ -65,6 +87,7 @@ export default function ReportLostPage() {
             // ล้างฟอร์ม
             setFormData({ name: '', category: '', description: '', location: '', date: '', reporterName: '', contactPhone: '', otherContact: '', meetingLocation: '' });
             setImagePreview(null);
+            setPinLocation({ lat: 13.7563, lng: 100.5018 });
             alert('✅ แจ้งรายการสิ่งของหาย และบันทึกลงฐานข้อมูลสำเร็จ!');
         } catch (error) {
             console.error('Error:', error);
@@ -140,6 +163,31 @@ export default function ReportLostPage() {
                                     className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-yellow-400 outline-none"
                                 />
                             </div>
+                        </div>
+
+                        {/* แผนที่ปักหมุด */}
+                        <div>
+                            <label className="block text-sm font-bold text-gray-700 mb-2">
+                                <MapPin className="inline w-4 h-4 text-red-500 mr-1" />
+                                ปักหมุดตำแหน่งบนแผนที่ (คลิกเพื่อย้ายหมุด)
+                            </label>
+                            <div className="rounded-xl overflow-hidden border border-gray-200 shadow-sm" style={{ height: '300px' }}>
+                                <MapContainer
+                                    center={[pinLocation.lat, pinLocation.lng]}
+                                    zoom={13}
+                                    scrollWheelZoom={true}
+                                    style={{ height: '100%', width: '100%' }}
+                                >
+                                    <TileLayer
+                                        attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                        url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                    />
+                                    <LocationMarker pinLocation={pinLocation} setPinLocation={setPinLocation} />
+                                </MapContainer>
+                            </div>
+                            <p className="text-xs text-gray-400 mt-1">
+                                📍 พิกัดปัจจุบัน: {pinLocation.lat.toFixed(5)}, {pinLocation.lng.toFixed(5)}
+                            </p>
                         </div>
 
                         <div>

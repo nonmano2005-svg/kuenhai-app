@@ -3,6 +3,16 @@ import { useState, useEffect } from 'react';
 import { ArrowLeft, MapPin, Calendar, Clock, Phone, MessageCircle, Shield, Share2, PackageX, Trash2 } from 'lucide-react';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
+import { MapContainer, TileLayer, Marker } from 'react-leaflet';
+import L from 'leaflet';
+
+// แก้ไข default icon ของ Leaflet
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+    iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 
 export default function ItemDetailPage() {
@@ -123,7 +133,7 @@ export default function ItemDetailPage() {
                             />
                         </div>
 
-                        {/* Map Placeholder */}
+                        {/* Map Section */}
                         <div className="rounded-2xl overflow-hidden shadow-md border border-gray-100 bg-white">
                             <div className="p-4 border-b border-gray-100">
                                 <h3 className="font-semibold text-gray-700 flex items-center gap-2">
@@ -131,15 +141,29 @@ export default function ItemDetailPage() {
                                     สถานที่พบ
                                 </h3>
                             </div>
-                            <div className="relative rounded-b-2xl overflow-hidden">
-                                <iframe
-                                    title="Google Map"
-                                    src={`https://maps.google.com/maps?q=${encodeURIComponent(item.location || 'Thailand')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
-                                    className="w-full h-56 border-0"
-                                    allowFullScreen
-                                    loading="lazy"
-                                    referrerPolicy="no-referrer-when-downgrade"
-                                />
+                            <div className="relative rounded-b-2xl overflow-hidden" style={{ height: '224px' }}>
+                                {item.pinLocation ? (
+                                    <MapContainer
+                                        center={[item.pinLocation.lat, item.pinLocation.lng]}
+                                        zoom={15}
+                                        scrollWheelZoom={false}
+                                        style={{ height: '100%', width: '100%' }}
+                                    >
+                                        <TileLayer
+                                            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
+                                            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                                        />
+                                        <Marker position={[item.pinLocation.lat, item.pinLocation.lng]} />
+                                    </MapContainer>
+                                ) : (
+                                    <iframe
+                                        title="Google Map"
+                                        src={`https://maps.google.com/maps?q=${encodeURIComponent(item.location || 'Thailand')}&t=&z=15&ie=UTF8&iwloc=&output=embed`}
+                                        className="w-full h-full border-0"
+                                        allowFullScreen
+                                        loading="lazy"
+                                    />
+                                )}
                             </div>
                         </div>
                     </div>
