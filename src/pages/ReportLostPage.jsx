@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Upload, MapPin, Calendar, Tag, Bell, Loader2, Phone, MessageSquare, Handshake, UserCircle } from 'lucide-react';
+import { Upload, MapPin, Calendar, Tag, Bell, Loader2, Phone, MessageSquare, Handshake } from 'lucide-react';
 import { db, auth } from '../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
@@ -9,7 +9,6 @@ export default function ReportLostPage() {
         contactPhone: '', otherContact: '', meetingLocation: ''
     });
     const [imagePreview, setImagePreview] = useState(null);
-    const [reporterImagePreview, setReporterImagePreview] = useState(null);
     const [reportedItems, setReportedItems] = useState([]);
     const [isLoading, setIsLoading] = useState(false);
 
@@ -42,10 +41,7 @@ export default function ReportLostPage() {
         if (file) compressImage(file, 600, setImagePreview);
     };
 
-    const handleReporterImageChange = (e) => {
-        const file = e.target.files[0];
-        if (file) compressImage(file, 300, setReporterImagePreview);
-    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -55,7 +51,6 @@ export default function ReportLostPage() {
             const docRef = await addDoc(collection(db, 'lostItems'), {
                 ...formData,
                 image: imagePreview || 'https://via.placeholder.com/300x200?text=No+Image',
-                reporterImage: reporterImagePreview || null,
                 userId: auth.currentUser ? auth.currentUser.uid : null,
                 createdAt: serverTimestamp()
             });
@@ -70,7 +65,6 @@ export default function ReportLostPage() {
             // ล้างฟอร์ม
             setFormData({ name: '', category: '', description: '', location: '', date: '', contactPhone: '', otherContact: '', meetingLocation: '' });
             setImagePreview(null);
-            setReporterImagePreview(null);
             alert('✅ แจ้งรายการสิ่งของหาย และบันทึกลงฐานข้อมูลสำเร็จ!');
         } catch (error) {
             console.error('Error:', error);
@@ -210,25 +204,6 @@ export default function ReportLostPage() {
                             </div>
                         </div>
 
-                        <div>
-                            <label className="block text-sm font-bold text-gray-700 mb-2">รูปโปรไฟล์ผู้แจ้ง</label>
-                            <div className="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-blue-200 border-dashed rounded-xl hover:bg-blue-50/50 transition relative">
-                                <div className="space-y-1 text-center">
-                                    {reporterImagePreview ? (
-                                        <img src={reporterImagePreview} alt="Reporter" className="mx-auto h-24 w-24 object-cover rounded-full border-2 border-blue-300" />
-                                    ) : (
-                                        <UserCircle className="mx-auto h-12 w-12 text-blue-300" />
-                                    )}
-                                    <div className="flex justify-center text-sm text-gray-600 mt-2">
-                                        <label className="relative cursor-pointer bg-white rounded-md font-medium text-blue-600 hover:text-blue-500">
-                                            <span>อัปโหลดรูปโปรไฟล์</span>
-                                            <input type="file" className="sr-only" accept="image/*" onChange={handleReporterImageChange} />
-                                        </label>
-                                    </div>
-                                    <p className="text-xs text-gray-400">เพื่อให้ผู้พบสามารถยืนยันตัวตนคุณได้</p>
-                                </div>
-                            </div>
-                        </div>
 
                         <button type="submit" disabled={isLoading}
                             className="w-full bg-[#2D3142] hover:bg-gray-800 text-white font-bold py-4 rounded-xl flex justify-center items-center gap-2 transition-colors disabled:bg-gray-400">

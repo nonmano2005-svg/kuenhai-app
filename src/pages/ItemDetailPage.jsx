@@ -1,18 +1,9 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
-import { useState, useRef, useEffect } from 'react';
-import { ArrowLeft, MapPin, Calendar, Clock, Phone, MessageCircle, Send, User, Shield, Share2, PackageX, CheckCircle, Bot, Trash2 } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ArrowLeft, MapPin, Calendar, Clock, Phone, MessageCircle, Shield, Share2, PackageX, Trash2 } from 'lucide-react';
 import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { db, auth } from '../firebase';
-import VerificationBadgeCard from '../components/VerificationBadgeCard';
 
-const aiResponses = [
-    'รับทราบครับ ระบบกำลังบันทึกข้อมูล...',
-    'ขอบคุณสำหรับข้อมูลครับ ผมจะช่วยตามหาให้นะครับ',
-    'เข้าใจครับ ขอเวลาตรวจสอบข้อมูลสักครู่นะครับ',
-    'ผมได้บันทึกข้อมูลเรียบร้อยแล้วครับ มีอะไรเพิ่มเติมไหมครับ?',
-    'ขอบคุณครับ จะแจ้งให้ทราบทันทีเมื่อมีความคืบหน้าครับ',
-    'ข้อมูลนี้มีประโยชน์มากครับ ช่วยให้ตามหาได้ง่ายขึ้น',
-];
 
 export default function ItemDetailPage() {
     const { id } = useParams();
@@ -20,13 +11,6 @@ export default function ItemDetailPage() {
     const [item, setItem] = useState(null);
     const [loading, setLoading] = useState(true);
     const [posterName, setPosterName] = useState('');
-    const [inputValue, setInputValue] = useState('');
-    const [messages, setMessages] = useState([
-        { id: 1, text: 'สวัสดีครับ ผมคือผู้ช่วย KUEN HAI มีอะไรให้ผมช่วยตามหาไหมครับ?', sender: 'ai', time: 'Now' },
-    ]);
-    const [isTyping, setIsTyping] = useState(false);
-    const chatEndRef = useRef(null);
-    const idCounter = useRef(2);
 
     // Fetch item from Firestore
     useEffect(() => {
@@ -71,43 +55,6 @@ export default function ItemDetailPage() {
         fetchItem();
     }, [id]);
 
-    // Auto-scroll to bottom when messages change
-    useEffect(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    }, [messages, isTyping]);
-
-    const getTimeNow = () =>
-        new Date().toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
-
-    const handleSendMessage = (e) => {
-        e.preventDefault();
-        const trimmed = inputValue.trim();
-        if (!trimmed) return;
-
-        const userMsg = {
-            id: idCounter.current++,
-            text: trimmed,
-            sender: 'user',
-            time: getTimeNow(),
-        };
-        setMessages((prev) => [...prev, userMsg]);
-        setInputValue('');
-
-        // Simulate AI typing delay (1000–1500ms)
-        setIsTyping(true);
-        const delay = 1000 + Math.random() * 500;
-        setTimeout(() => {
-            const randomResponse = aiResponses[Math.floor(Math.random() * aiResponses.length)];
-            const aiMsg = {
-                id: idCounter.current++,
-                text: randomResponse,
-                sender: 'ai',
-                time: getTimeNow(),
-            };
-            setMessages((prev) => [...prev, aiMsg]);
-            setIsTyping(false);
-        }, delay);
-    };
 
     // Loading state
     if (loading) {
@@ -326,95 +273,10 @@ export default function ItemDetailPage() {
                                 ลบประกาศนี้
                             </button>
 
-                            {/* Verification Status */}
-                            <VerificationBadgeCard
-                                emailVerified={true}
-                                phoneVerified={true}
-                                idVerified={true}
-                                trustScore={100}
-                            />
+
                         </div>
 
-                        {/* Chat Section */}
-                        <div className="bg-white rounded-2xl shadow-md border border-gray-100 overflow-hidden">
-                            <div className="bg-navy px-5 py-3.5">
-                                <h3 className="font-semibold text-white flex items-center gap-2 text-sm">
-                                    <MessageCircle className="w-4 h-4 text-accent" />
-                                    แชทกับผู้พบ
-                                </h3>
-                            </div>
 
-                            {/* Messages */}
-                            <div className="p-4 space-y-3 max-h-80 overflow-y-auto bg-gray-50/50 scroll-smooth">
-                                {messages.map((msg) => (
-                                    <div
-                                        key={msg.id}
-                                        className={`flex items-end gap-2 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-                                    >
-                                        {msg.sender === 'ai' && (
-                                            <div className="flex-shrink-0 w-7 h-7 rounded-full bg-navy/10 flex items-center justify-center">
-                                                <Bot className="w-4 h-4 text-navy" />
-                                            </div>
-                                        )}
-                                        <div className={`max-w-[75%] rounded-2xl px-4 py-2.5 transition-all duration-200 ${msg.sender === 'user'
-                                            ? 'bg-navy text-white rounded-br-md'
-                                            : 'bg-white text-gray-700 shadow-sm border border-gray-100 rounded-bl-md'
-                                            }`}
-                                        >
-                                            <p className={`text-[11px] font-semibold mb-0.5 ${msg.sender === 'user' ? 'text-accent' : 'text-navy'
-                                                }`}>
-                                                {msg.sender === 'user' ? 'คุณ' : 'KUEN HAI Bot'}
-                                            </p>
-                                            <p className="text-sm">{msg.text}</p>
-                                            <p className={`text-[10px] mt-1 ${msg.sender === 'user' ? 'text-white/50' : 'text-gray-400'
-                                                }`}>
-                                                {msg.time}
-                                            </p>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                {/* Typing indicator */}
-                                {isTyping && (
-                                    <div className="flex items-end gap-2 justify-start">
-                                        <div className="flex-shrink-0 w-7 h-7 rounded-full bg-navy/10 flex items-center justify-center">
-                                            <Bot className="w-4 h-4 text-navy" />
-                                        </div>
-                                        <div className="bg-white text-gray-400 shadow-sm border border-gray-100 rounded-2xl rounded-bl-md px-4 py-3">
-                                            <div className="flex gap-1">
-                                                <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                                                <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                                                <span className="w-2 h-2 bg-gray-300 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                                            </div>
-                                        </div>
-                                    </div>
-                                )}
-
-                                {/* Auto-scroll anchor */}
-                                <div ref={chatEndRef} />
-                            </div>
-
-                            {/* Input */}
-                            <form onSubmit={handleSendMessage} className="p-3 border-t border-gray-100 bg-white">
-                                <div className="flex gap-2">
-                                    <input
-                                        type="text"
-                                        value={inputValue}
-                                        onChange={(e) => setInputValue(e.target.value)}
-                                        placeholder="พิมพ์ข้อความ..."
-                                        className="flex-1 px-4 py-2.5 rounded-full bg-gray-100 text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-navy/30 transition-shadow"
-                                        disabled={isTyping}
-                                    />
-                                    <button
-                                        type="submit"
-                                        disabled={isTyping || !inputValue.trim()}
-                                        className="bg-navy hover:bg-navy-dark text-white p-2.5 rounded-full transition-colors shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
-                                    >
-                                        <Send className="w-4 h-4" />
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
                     </div>
                 </div>
             </div>
