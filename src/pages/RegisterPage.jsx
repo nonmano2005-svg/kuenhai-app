@@ -1,79 +1,94 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../firebase';
-import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
-import { User, Phone, Lock, Loader2, UserPlus } from 'lucide-react';
+import { auth, db } from '../firebase';
+import { RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { Phone, Lock, User, Loader2, KeyRound } from 'lucide-react';
 
 export default function RegisterPage() {
     const navigate = useNavigate();
-    const [formData, setFormData] = useState({ name: '', phone: '', password: '' });
+    const [phone, setPhone] = useState('');
+    const [otp, setOtp] = useState('');
+    const [name, setName] = useState('');
+    const [confirmationResult, setConfirmationResult] = useState(null);
+    const [step, setStep] = useState(1); // 1: กรอกเบอร์, 2: กรอก OTP
     const [isLoading, setIsLoading] = useState(false);
-    const [errorMsg, setErrorMsg] = useState('');
 
-    const handleSubmit = async (e) => {
+    // ตั้งค่าตัวป้องกันสแปม (reCAPTCHA)
+    const setupRecaptcha = () => {
+        if (!window.recaptchaVerifier) {
+            window.recaptchaVerifier = new RecaptchaVerifier(auth, 'recaptcha-container', {
+                'size': 'invisible'
+            });
+        }
+    };
+
+    // ขั้นตอนที่ 1: ส่ง SMS
+    const onSignup = async (e) => {
         e.preventDefault();
         setIsLoading(true);
-        setErrorMsg('');
+        setupRecaptcha();
+        const appVerifier = window.recaptchaVerifier;
+        const formatPhone = '+' + phone.replace(/\D/g, ''); // ต้องเป็นฟอร์แมต +668xxxx
 
         try {
-            // บันทึกข้อมูลเข้า Firestore ตรงๆ (เลี่ยงปัญหา API Key ของระบบ Auth)
-            await addDoc(collection(db, 'users'), {
-                name: formData.name,
-                phone: formData.phone,
-                password: formData.password,
+            const confirmation = await signInWithPhoneNumber(auth, formatPhone, appVerifier);
+            setConfirmationResult(confirmation);
+            setStep(2);
+            alert('ส่งรหัส OTP ไปที่มือถือแล้วครับ!');
+        } catch (error) {
+            console.error(error);
+            alert('ส่งไม่สำเร็จ: เช็คโควต้า 10 ครั้งต่อวัน หรือ API Key ใน Vercel ครับ');
+        } finally {
+            setIsLoading(false);
+        }
+    };
+
+    // ขั้นตอนที่ 2: ยืนยัน OTP และบันทึกลง Firestore
+    const onOTPVerify = async (e) => {
+        e.preventDefault();
+        setIsLoading(true);
+        try {
+            const result = await confirmationResult.confirm(otp);
+            const user = result.user;
+
+            // บันทึกข้อมูลเข้าฐานข้อมูลกลาง
+            await setDoc(doc(db, 'users', user.uid), {
+                uid: user.uid,
+                name: name,
+                phone: phone,
                 createdAt: serverTimestamp()
             });
 
-            alert('สมัครสมาชิกสำเร็จ! ข้อมูลเบอร์โทรเข้าระบบกลางเรียบร้อย');
+            alert('ยืนยันตัวตนสำเร็จ! ข้อมูลเข้าระบบแล้ว');
             navigate('/login');
         } catch (error) {
-            console.error("Firestore Error:", error);
-            setErrorMsg('สมัครไม่ได้: เช็ค Rules ใน Firebase ให้เป็น true ครับ');
+            alert('รหัส OTP ไม่ถูกต้องครับ');
         } finally {
             setIsLoading(false);
         }
     };
 
     return (
-        <div className="min-h-screen bg-[#2D3142] flex flex-col justify-center items-center p-4">
-            <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md">
-                <div className="text-center mb-6">
-                    <div className="bg-yellow-400 text-gray-900 text-xl font-black py-2 px-6 rounded-xl inline-block mb-2">KUEN HAI</div>
-                    <h2 className="text-2xl font-bold text-gray-800">สมัครสมาชิก (ใช้เบอร์โทร)</h2>
-                </div>
+        <div className="min-h-screen bg-[#2D3142] flex justify-center items-center p-4">
+            <div className="bg-white p-8 rounded-3xl shadow-xl w-full max-w-md text-center">
+                <div className="bg-yellow-400 text-gray-900 font-black py-2 px-6 rounded-xl inline-block mb-6">KUEN HAI</div>
+                <div id="recaptcha-container"></div>
 
-                {errorMsg && <div className="bg-red-50 text-red-500 p-3 rounded-lg mb-4 text-center border border-red-100">{errorMsg}</div>}
-
-                <form onSubmit={handleSubmit} className="space-y-4">
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">ชื่อ-นามสกุล</label>
-                        <div className="relative">
-                            <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                            <input type="text" required onChange={(e) => setFormData({ ...formData, name: e.target.value })} className="w-full pl-10 pr-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-400" placeholder="ชื่อของคุณ" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">เบอร์โทรศัพท์</label>
-                        <div className="relative">
-                            <Phone className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                            <input type="tel" required onChange={(e) => setFormData({ ...formData, phone: e.target.value })} className="w-full pl-10 pr-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-400" placeholder="08x-xxx-xxxx" />
-                        </div>
-                    </div>
-
-                    <div>
-                        <label className="block text-sm font-bold text-gray-700 mb-1">กำหนดรหัสผ่าน</label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
-                            <input type="password" required onChange={(e) => setFormData({ ...formData, password: e.target.value })} className="w-full pl-10 pr-4 py-2 border rounded-xl outline-none focus:ring-2 focus:ring-yellow-400" placeholder="••••••" />
-                        </div>
-                    </div>
-
-                    <button type="submit" disabled={isLoading} className="w-full bg-yellow-500 hover:bg-yellow-600 text-white font-bold py-3 rounded-xl flex justify-center items-center gap-2 transition-colors mt-4">
-                        {isLoading ? <Loader2 className="h-5 w-5 animate-spin" /> : <UserPlus className="h-5 w-5" />}
-                        ยืนยันการสมัคร
-                    </button>
-                </form>
+                {step === 1 ? (
+                    <form onSubmit={onSignup} className="space-y-4 text-left">
+                        <h2 className="text-xl font-bold mb-4">สมัครด้วยเบอร์โทรศัพท์</h2>
+                        <input type="text" placeholder="ชื่อ-นามสกุล" required onChange={(e) => setName(e.target.value)} className="w-full p-3 border rounded-xl outline-none" />
+                        <input type="tel" placeholder="66812345678 (ใส่ 66 แทนเลข 0)" required onChange={(e) => setPhone(e.target.value)} className="w-full p-3 border rounded-xl outline-none" />
+                        <button type="submit" className="w-full bg-yellow-500 text-white font-bold py-3 rounded-xl">ส่งรหัส OTP</button>
+                    </form>
+                ) : (
+                    <form onSubmit={onOTPVerify} className="space-y-4 text-left">
+                        <h2 className="text-xl font-bold mb-4">กรอกรหัส 6 หลักจาก SMS</h2>
+                        <input type="text" placeholder="รหัส OTP" required onChange={(e) => setOtp(e.target.value)} className="w-full p-3 border rounded-xl outline-none text-center text-2xl tracking-widest" />
+                        <button type="submit" className="w-full bg-green-500 text-white font-bold py-3 rounded-xl">ยืนยันรหัส</button>
+                    </form>
+                )}
             </div>
         </div>
     );
